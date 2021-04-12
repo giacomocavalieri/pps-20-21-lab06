@@ -11,15 +11,32 @@ trait Functions {
   def max(a: List[Int]): Int // gives Int.MinValue if a is empty
 }
 
-object FunctionsImpl extends Functions {
-
-  override def sum(a: List[Double]): Double = ???
-
-  override def concat(a: Seq[String]): String = ???
-
-  override def max(a: List[Int]): Int = ???
+trait Combiner[A] {
+  def unit: A
+  def combine(a: A, b: A): A
 }
 
+object Combiner {
+  implicit val sumCombiner = new Combiner[Double] {
+    override def unit: Double = 0
+    override def combine(a: Double, b: Double): Double = a+b
+  }
+  implicit val concatCombiner = new Combiner[String] {
+    override def unit: String = ""
+    override def combine(a: String, b: String): String = a+b
+  }
+  implicit val maxCombiner = new Combiner[Int] {
+    override def unit: Int = Int.MinValue
+    override def combine(a: Int, b: Int): Int = if (a > b) a else b
+  }
+}
+
+object FunctionsImpl extends Functions {
+  private def combine[A](a: Iterable[A])(implicit c: Combiner[A]): A = a.foldLeft(c.unit)(c.combine)
+  override def sum(a: List[Double]): Double = combine(a)
+  override def concat(a: Seq[String]): String = combine(a)
+  override def max(a: List[Int]): Int = combine(a)
+}
 
 /*
   * 2) To apply DRY principle at the best,
@@ -34,12 +51,7 @@ object FunctionsImpl extends Functions {
   * When all works, note we completely avoided duplications..
  */
 
-trait Combiner[A] {
-  def unit: A
-  def combine(a: A, b: A): A
-}
-
-object TryFunctions extends App {
+object TryFunctionsComb extends App {
   val f: Functions = FunctionsImpl
   println(f.sum(List(10.0,20.0,30.1))) // 60.1
   println(f.sum(List()))                // 0.0
