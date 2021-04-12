@@ -29,7 +29,7 @@ class BasicParser(chars: Set[Char]) extends Parser[Char] {
 trait NonEmpty[T] extends Parser[T]{
   private[this] var empty = true
   abstract override def parse(t: T) = {empty = false; super.parse(t)} // who is super??
-  abstract override def end() = !empty && {empty = true; super.end()}
+  abstract override def end() = !empty && super.end()
 }
 
 trait NotTwoConsecutive[T] extends Parser[T] {

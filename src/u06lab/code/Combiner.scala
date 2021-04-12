@@ -17,18 +17,13 @@ trait Combiner[A] {
 }
 
 object Combiner {
-  implicit val sumCombiner = new Combiner[Double] {
-    override def unit: Double = 0
-    override def combine(a: Double, b: Double): Double = a+b
+  def apply[T](base: T, f: (T, T) => T): Combiner[T] = new Combiner[T] {
+    override def unit: T = base
+    override def combine(a: T, b: T): T = f(a,b)
   }
-  implicit val concatCombiner = new Combiner[String] {
-    override def unit: String = ""
-    override def combine(a: String, b: String): String = a+b
-  }
-  implicit val maxCombiner = new Combiner[Int] {
-    override def unit: Int = Int.MinValue
-    override def combine(a: Int, b: Int): Int = if (a > b) a else b
-  }
+  implicit val sumCombiner: Combiner[Double] = Combiner(0, _+_)
+  implicit val concatCombiner: Combiner[String] = Combiner("", _+_)
+  implicit val maxCombiner:Combiner[Int] = Combiner(Int.MinValue, Math.max)
 }
 
 object FunctionsImpl extends Functions {
