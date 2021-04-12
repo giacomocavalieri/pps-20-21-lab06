@@ -15,6 +15,12 @@ abstract class Parser[T] {
   def parseAll(seq: Seq[T]): Boolean = (seq forall {parse(_)}) & end() // note &, not &&
 }
 
+object Parser {
+  implicit class ParsableString(toParse: String) {
+    def charParser(): Parser[Char] = new BasicParser(toParse.toSet)
+  }
+}
+
 class BasicParser(chars: Set[Char]) extends Parser[Char] {
   override def parse(t: Char): Boolean = chars.contains(t)
   override def end(): Boolean = true
@@ -26,16 +32,22 @@ trait NonEmpty[T] extends Parser[T]{
   abstract override def end() = !empty && {empty = true; super.end()}
 }
 
-class NonEmptyParser(chars: Set[Char]) extends BasicParser(chars) with NonEmpty[Char]
-
-trait NotTwoConsecutive[T] extends Parser[T]{
-  // ???
+trait NotTwoConsecutive[T] extends Parser[T] {
+  private[this] var prev: Option[T] = None
+  private[this] var consecutive = false
+  abstract override def parse(t: T) = {
+    for (p <- prev) { if (t == p) consecutive = true }
+    prev = Some(t)
+    super.parse(t)
+  }
+  abstract override def end() = !consecutive && super.end()
 }
 
-class NotTwoConsecutiveParser(chars: Set[Char]) extends BasicParser(chars) // ??? with ...
+class NonEmptyParser(chars: Set[Char]) extends BasicParser(chars) with NonEmpty[Char]
 
+class NotTwoConsecutiveParser(chars: Set[Char]) extends BasicParser(chars) with NotTwoConsecutive[Char]
 
-object TryParsers extends App {
+object ParsersTest extends App {
   def parser = new BasicParser(Set('a','b','c'))
   println(parser.parseAll("aabc".toList)) // true
   println(parser.parseAll("aabcdc".toList)) // false
@@ -59,7 +71,8 @@ object TryParsers extends App {
   println(parserNTCNE.parseAll("XYYZ".toList)) // false
   println(parserNTCNE.parseAll("".toList)) // false
 
-  def sparser : Parser[Char] = ??? // "abc".charParser()
+  import u06lab.code.Parser.ParsableString
+  def sparser : Parser[Char] = "abc".charParser()
   println(sparser.parseAll("aabc".toList)) // true
   println(sparser.parseAll("aabcdc".toList)) // false
   println(sparser.parseAll("".toList)) // true
