@@ -36,7 +36,7 @@ trait NotTwoConsecutive[T] extends Parser[T] {
   private[this] var prev: Option[T] = None
   private[this] var consecutive = false
   abstract override def parse(t: T) = {
-    for (p <- prev) { if (t == p) consecutive = true }
+    consecutive = prev.fold(false)(consecutive || t == _)
     prev = Some(t)
     super.parse(t)
   }

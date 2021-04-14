@@ -20,7 +20,7 @@ object TicTacToe extends App {
     }
   }
 
-  def getWinner(board: Board): Option[Player] = board match { case Winner(p) => Some(p); case _ => None }
+  def getWinner(board: Board): Option[Player] = Some(board) collect { case Winner(p) => p }
 
   def getRows(board: Board): List[List[Player]] =
     for (x <- (0 to 2).toList) yield board collect { case Mark(`x`, _, p) => p }
